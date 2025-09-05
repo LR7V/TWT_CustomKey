@@ -246,8 +246,6 @@ class TWT_KeyConfig
     static bool IsAllowedType(string typeName)
     {
         EnsureLoaded();
-
-        Print("[KEYCONFIG] IsAllowedType check for " + typeName);
         if (!typeName || typeName == string.Empty) return false;
 
         string tn = typeName;
