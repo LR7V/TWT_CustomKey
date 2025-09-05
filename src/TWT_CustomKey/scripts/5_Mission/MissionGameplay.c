@@ -9,7 +9,6 @@ modded class MissionGameplay extends MissionBase
 	override void OnInit()
     {
         super.OnInit();
-        // Registriert den Client-RPC-Handler
         TWT_KeySyncService.InitRPC();
     }
 

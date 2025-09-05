@@ -3,7 +3,6 @@ class ActionShowDoorIndex : ActionInteractBase
     void ActionShowDoorIndex()
     {
         m_HUDCursorIcon = CursorIcons.None;
-        // optional: m_Text = "Türindex anzeigen";  // nur wenn du kein GetText() nutzt
     }
 
     override string GetText()

@@ -4,7 +4,7 @@ class TWT_KeySyncService_Server
     {
         if (!GetGame() || !GetGame().IsServer() || !id) return;
 
-        TStringArray types = TWT_KeyConfig.GetAllTypes(); // nur Typnamen
+        TStringArray types = TWT_KeyConfig.GetAllTypes(); 
         string adminType   = TWT_KeyConfig.GetAdminKeyType();
 
         GetTWT_CustomKeyLogger().LogDebug("[KEYSYNC] sending types count=" + types.Count().ToString() + " admin=" + adminType + " to " + id.GetId());

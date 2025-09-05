@@ -27,10 +27,8 @@ modded class ActionUnlockDoors : ActionContinuousBase
         m_ConditionTarget = new CCTCursor;
     }
 
-    // Client: nur anzeigen, wenn sinnvoll – keine Whitelist hier
     override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
     {
-        // --- Building + DoorIndex robust ermitteln (Child/Parent) ---
         BuildingBase building;
         Object obj = target.GetObject();
         if (!Class.CastTo(building, obj)) {
@@ -42,20 +40,17 @@ modded class ActionUnlockDoors : ActionContinuousBase
         int doorIndex = building.GetDoorIndex(target.GetComponentIndex());
         if (doorIndex < 0) return false;
 
-        // Für UNLOCK: nur wenn aktuell abgeschlossen
         if (!building.IsDoorLocked(doorIndex)) return false;
 
         if (!item) return false;
         string heldType = item.GetType();
 
-        // --- Client: Anzeige steuern über Cache ---
         if (GetGame() && !GetGame().IsServer()) {
             if (TWT_KeyClientCache.IsAdminKeyClient(heldType)) return true;
             if (TWT_KeyClientCache.IsAllowedTypeClient(heldType)) return true;
             return false;
         }
 
-        // --- Server: gleiche Sichtbarkeits-Logik, aber mit Server-Config ---
         if (TWT_KeyConfig.IsAdminKey(heldType)) return true;
         if (TWT_KeyConfig.IsAllowedType(heldType)) return true;
         return false;
@@ -65,7 +60,7 @@ modded class ActionUnlockDoors : ActionContinuousBase
     {
         GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] start");
 
-        // --- sanity ---
+
         if (!action_data) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: no action_data"); return; }
 
         PlayerBase player = PlayerBase.Cast(action_data.m_Player);
@@ -82,7 +77,7 @@ modded class ActionUnlockDoors : ActionContinuousBase
         Object tgt = action_data.m_Target.GetObject();
         if (!tgt) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: target obj null"); return; }
 
-        // --- building (mit parent-fallback) ---
+
         BuildingBase building;
         if (!Class.CastTo(building, tgt)) {
             Object parent = tgt.GetParent();
@@ -92,14 +87,14 @@ modded class ActionUnlockDoors : ActionContinuousBase
             }
         }
 
-        // --- door index / zustand ---
+
         int comp = action_data.m_Target.GetComponentIndex();
         int doorIndex = building.GetDoorIndex(comp);
         if (doorIndex < 0) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: doorIndex < 0"); return; }
 
         if (!building.IsDoorLocked(doorIndex)) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: already unlocked"); return; }
 
-        // --- item / key prüfung ---
+
         ItemBase held = player.GetItemInHands();
         if (!held) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: no item in hands"); return; }
 
@@ -116,14 +111,13 @@ modded class ActionUnlockDoors : ActionContinuousBase
             }
         }
 
-        // --- unlock + persist ---
         building.UnlockDoor(doorIndex);
         bool stillLocked = building.IsDoorLocked(doorIndex);
         if (stillLocked) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: unlock failed"); return; }
 
         GetTWT_DoorLockDB().SetLocked(building, doorIndex, false);
 
-        // --- success log ---
+
         vector pos = building.GetPosition();
         string msg = "Aufgeschlossen | " + playerName + " (" + steamID + ") | " + building.GetType() + " (" + pos.ToString() + ") | DoorIndex [" + doorIndex.ToString() + "]";
         if (isAdminKey) msg = msg + " | via AdminKey";

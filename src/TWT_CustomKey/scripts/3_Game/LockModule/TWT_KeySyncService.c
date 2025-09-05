@@ -1,5 +1,3 @@
-// CF-basiertes Server->Client Sync der erlaubten Key-Typen (ohne SteamIDs)
-
 class TWT_KeySyncService
 {
     protected static ref TWT_KeySyncService s_Instance;
@@ -8,7 +6,7 @@ class TWT_KeySyncService
     {
         if (!s_Instance) s_Instance = new TWT_KeySyncService();
 
-        // Richtig: SingleplayerExecutionType (mit 'l')
+
         GetRPCManager().AddRPC("TWT_KeySync", "ClientReceiveAllowedTypes", s_Instance, SingleplayerExecutionType.Client);
     }
 

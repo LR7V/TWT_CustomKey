@@ -1,6 +1,6 @@
 class TWT_DoorLockData
 {
-    ref map<string, ref array<int>> items; // key -> locked door indices
+    ref map<string, ref array<int>> items; 
 
     void TWT_DoorLockData()
     {
@@ -21,7 +21,7 @@ class TWT_DoorLockDB
         Load();
     }
 
-    // Key: <type>:<x>:<z> (x/z gerundet auf 1 m)
+
     string MakeKey(BuildingBase bld)
     {
         vector p = bld.GetPosition();
@@ -60,13 +60,12 @@ class TWT_DoorLockDB
             if (pos == -1) doors.Insert(doorIndex);
         } else {
             if (pos != -1) doors.Remove(pos);
-            // Liste leer? Dann Key aufräumen
             if (doors.Count() == 0) m_Data.items.Remove(key);
         }
         Save();
     }
 
-    // Versucht, ein Building an (x,z) mit kleinem Radius zu finden
+
     BuildingBase FindBuildingByKey(string key, float radius = 1.25)
     {
         TStringArray parts = new TStringArray();
@@ -89,7 +88,7 @@ class TWT_DoorLockDB
         return null;
     }
 
-    // Wendet alle gespeicherten Sperren an
+
     int ApplyAllOnce()
     {
         int applied = 0;
@@ -107,10 +106,10 @@ class TWT_DoorLockDB
         return applied;
     }
 
-    // Wiederholt anwenden (z. B. nach DZE-Spawn) – stoppt, sobald etwas angewandt wurde oder die Versuche aus sind
+
     void ApplyWithRetries(int tries = 10, int intervalMs = 3000)
     {
-        // kleine wiederholte Aufgabe
+
         Param2<int,int> state = new Param2<int,int>(tries, intervalMs);
         GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(this.OnRetryTick, intervalMs, true, state);
     }
@@ -127,7 +126,6 @@ class TWT_DoorLockDB
             GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).Remove(this.OnRetryTick);
             return;
         }
-        // weiter probieren
         state.param1 = triesLeft - 1;
     }
 }

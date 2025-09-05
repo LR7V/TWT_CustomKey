@@ -18,11 +18,11 @@ modded class ActionOpenDoors : ActionInteractBase
         if (doorIndex == -1)
             return false;
 
-        // Unlocked -> immer anzeigen
+
         if (!building.IsDoorLocked(doorIndex))
             return true;
 
-        // Locked -> nur mit erlaubtem Key-Item in der Hand
+
         ItemBase held = player.GetItemInHands();
         string heldType = "";
         if (held)
@@ -51,15 +51,15 @@ modded class ActionOpenDoors : ActionInteractBase
 
         bool hasAllowedKeyInHand = TWT_KeyConfig.IsAllowedType(heldType);
 
-        // Gesperrt & kein erlaubter Key -> blockieren
+
         if (building.IsDoorLocked(doorIndex) && !hasAllowedKeyInHand)
         {
             if (GetGame().IsServer())
                 player.MessageStatus("Diese Tuer ist verschlossen!");
-            return; // kein super -> bleibt zu
+            return; 
         }
 
-        // sonst normal oeffnen
+
         super.OnStartServer(action_data);
     }
 };

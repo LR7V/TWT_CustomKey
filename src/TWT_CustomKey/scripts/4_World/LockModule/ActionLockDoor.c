@@ -27,10 +27,10 @@ modded class ActionLockDoors : ActionContinuousBase
         m_ConditionTarget = new CCTCursor;
     }
 
-    // Anzeige/Start: Client nutzt Cache; Server blockt nicht (OnFinish prüft hart)
+ 
     override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
     {
-        // --- Building + Parent-Fallback ---
+
         BuildingBase building;
         Object obj = target.GetObject();
         if (!Class.CastTo(building, obj))
@@ -43,13 +43,13 @@ modded class ActionLockDoors : ActionContinuousBase
         int doorIndex = building.GetDoorIndex(target.GetComponentIndex());
         if (doorIndex < 0) return false;
 
-        // Für LOCK: nur wenn aktuell NICHT abgeschlossen
+
         if (building.IsDoorLocked(doorIndex)) return false;
 
         if (!item) return false;
         string heldType = item.GetType();
 
-        // Client: saubere UX über Cache
+
         if (GetGame() && !GetGame().IsServer())
         {
             if (TWT_KeyClientCache.IsAdminKeyClient(heldType)) return true;
@@ -57,7 +57,7 @@ modded class ActionLockDoors : ActionContinuousBase
             return false;
         }
 
-        // Server: Aktion starten lassen; finale Prüfung in OnFinishProgressServer
+
         return true;
     }
 
@@ -65,7 +65,7 @@ modded class ActionLockDoors : ActionContinuousBase
     {
         GetTWT_CustomKeyLogger().LogDebug("[LOCK] start");
 
-        // --- sanity ---
+
         if (!action_data) { GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: no action_data"); return; }
 
         PlayerBase player = PlayerBase.Cast(action_data.m_Player);
@@ -82,7 +82,7 @@ modded class ActionLockDoors : ActionContinuousBase
         Object tgt = action_data.m_Target.GetObject();
         if (!tgt) { GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: target obj null"); return; }
 
-        // --- building (mit parent-fallback) ---
+
         BuildingBase building;
         if (!Class.CastTo(building, tgt)) {
             Object parent = tgt.GetParent();
@@ -92,14 +92,14 @@ modded class ActionLockDoors : ActionContinuousBase
             }
         }
 
-        // --- door index / zustand ---
+
         int comp = action_data.m_Target.GetComponentIndex();
         int doorIndex = building.GetDoorIndex(comp);
         if (doorIndex < 0) { GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: doorIndex < 0"); return; }
 
         if (building.IsDoorLocked(doorIndex)) { GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: already locked"); return; }
 
-        // --- item / key prüfung ---
+
         ItemBase held = player.GetItemInHands();
         if (!held) { GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: no item in hands"); return; }
 
@@ -117,7 +117,7 @@ modded class ActionLockDoors : ActionContinuousBase
             }
         }
 
-        // --- lock + persist ---
+
         building.LockDoor(doorIndex);
         bool nowLocked = building.IsDoorLocked(doorIndex);
         if (!nowLocked) { GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: lock failed"); return; }

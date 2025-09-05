@@ -31,26 +31,22 @@ class TWT_KeyConfig
     protected static ref TWT_KeyConfigData s_Data;
     protected static bool s_Loaded = false;
 
-    // Dein alter Default (wird als Legacy-Fallback übernommen)
     protected static ref TStringArray s_Default = {"Apple"};
 
-    // ---------- Load / Migrate ----------
     protected static void EnsureLoaded()
     {
         if (s_Loaded) return;
 
-        // Nur auf Server (inkl. Host) laden
+
         if (GetGame() && GetGame().IsMultiplayer() && !GetGame().IsServer())
         {
-            // Client: keine Datei lesen! Leere Struktur, damit Aufrufe nicht crashen,
-            // aber niemals echte Entscheidungen hier treffen.
             s_Data = new TWT_KeyConfigData();
             s_Loaded = true;
             GetTWT_CustomKeyLogger().LogDebug("[KEYCONFIG] Client context detected -> skip loading local $profile");
             return;
         }
 
-        // --- ab hier: Server / Singleplayer Host ---
+
         if (!FileExist(DIR)) MakeDirectory(DIR);
         s_Data = new TWT_KeyConfigData();
 
@@ -68,7 +64,7 @@ class TWT_KeyConfig
         }
         else
         {
-            s_Data.items.Insert("Apple");
+            s_Data.items.Insert("");
             s_Data.adminKeyType = "TWT_AdminKey";
 
             foreach (string t2 : s_Data.items)
@@ -81,38 +77,11 @@ class TWT_KeyConfig
             GetTWT_CustomKeyLogger().LogDebug("[KEYCONFIG] Wrote default (JsonFileLoader): " + KEYS_FILE);
         }
 
-        // Diagnose …
-        int kcount = 0;
-        if (s_Data.keys) kcount = s_Data.keys.Count();
-        GetTWT_CustomKeyLogger().LogDebug("[KEYCONFIG] Loaded keys.count=" + kcount.ToString());
-
-        if (s_Data.keys)
-        {
-            foreach (TWT_KeyEntry echeck : s_Data.keys)
-            {
-                int idcount = 0;
-                string typeName = "null";
-
-                if (echeck)
-                {
-                    typeName = echeck.type;
-                    if (echeck.steamIds) idcount = echeck.steamIds.Count();
-                }
-
-                GetTWT_CustomKeyLogger().LogDebug("[KEYCONFIG] key type=" + typeName + " ids.count=" + idcount.ToString());
-            }
-        }
 
         s_Loaded = true;
     }
 
 
-
-
-
-
-
-    // ---------- Queries ----------
     static string GetAdminKeyType()
     {
         EnsureLoaded();
@@ -130,12 +99,12 @@ class TWT_KeyConfig
     {
         EnsureLoaded();
 
-        // Nur Server darf die RAW-Config loggen
+
         if (GetGame().IsServer()) DebugDumpRaw();
 
         GetTWT_CustomKeyLogger().LogDebug("[KEYCONFIG] CanUseKey");
 
-        // --- Normalisierung ---
+
         if (typeName && typeName != string.Empty) {
             typeName.Trim();
         } else {
@@ -156,7 +125,6 @@ class TWT_KeyConfig
         string typeNorm = typeName;
         typeNorm.ToLower();
 
-        // --- AdminKey-Bypass ---
         string adminNorm = "";
         if (s_Data.adminKeyType && s_Data.adminKeyType != string.Empty) {
             adminNorm = s_Data.adminKeyType;
@@ -169,7 +137,7 @@ class TWT_KeyConfig
             return true;
         }
 
-        // --- Keys prüfen ---
+
         if (s_Data && s_Data.keys) {
             foreach (TWT_KeyEntry e : s_Data.keys) {
                 if (!e) continue;
@@ -213,7 +181,7 @@ class TWT_KeyConfig
                         }
                     }
 
-                    // Diagnose-Ausgabe Whitelist
+
                     string sample = "";
                     int shown = 0;
                     foreach (string raw2 : e.steamIds) {
@@ -237,7 +205,6 @@ class TWT_KeyConfig
             }
         }
 
-        // --- Legacy-Fallback ---
         if (s_Data.items && s_Data.items.Count() > 0) {
             foreach (string legacy : s_Data.items) {
                 string legacyNorm = "";
@@ -277,22 +244,19 @@ class TWT_KeyConfig
 
 
 
-
-    // Beibehaltener Legacy-Helper (jetzige Bedeutung: "Typ grundsätzlich erlaubt?")
-    // Nutzt keys, fällt auf items zurück.
     static bool IsAllowedType(string typeName)
     {
         EnsureLoaded();
         if (!typeName || typeName == string.Empty) return false;
 
-        // AdminKey ist immer "erlaubter Typ"
+
         if (IsAdminKey(typeName)) return true;
 
         foreach (ref TWT_KeyEntry e : s_Data.keys)
         {
             if (e && e.type == typeName) return true;
         }
-        // Fallback
+
         foreach (string t : s_Data.items)
         {
             if (t == typeName) return true;
@@ -311,7 +275,7 @@ class TWT_KeyConfig
                 outArr.Insert(e.type);
         }
 
-        // Legacy dazu (vermeidet Duplikate)
+
         foreach (string t : s_Data.items)
         {
             bool exists = false;

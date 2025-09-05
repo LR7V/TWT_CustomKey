@@ -12,7 +12,6 @@ class TWT_KeyClientCache
     {
         InitIfNeeded();
 
-        // admin
         s_AdminKeyTypeClient = "";
         if (adminType && adminType != string.Empty)
         {
@@ -20,7 +19,6 @@ class TWT_KeyClientCache
             s_AdminKeyTypeClient.Trim();
         }
 
-        // types
         s_AllowedTypesClient.Clear();
         if (types)
         {
@@ -66,7 +64,6 @@ class TWT_KeyClientCache
         return false;
     }
 
-    // Optional: Fallback, falls RPC noch nicht angekommen ist
     static bool HasData()
     {
         InitIfNeeded();

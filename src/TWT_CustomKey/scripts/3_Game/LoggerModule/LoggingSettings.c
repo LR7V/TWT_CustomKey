@@ -1,6 +1,6 @@
 class TWT_CustomKeyLoggingSettings 
 {
-    int logLevel = 0;
+    int logLevel = 1;
     int refreshRateInSeconds = 60;
 
     void MakeDirectoryIfNotExists()
