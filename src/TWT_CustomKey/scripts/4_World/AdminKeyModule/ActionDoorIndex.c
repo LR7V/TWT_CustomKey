@@ -62,13 +62,17 @@ class ActionShowDoorIndex : ActionContinuousBase
             }
         }
 
-        Object obj = target.GetObject();
+        Object obj = Object.Cast(target.GetObject());
         if (!obj) return false;
 
-        BuildingBase building;
-        if (!Class.CastTo(building, obj)) {
-            Object parent = obj.GetParent();
-            if (!parent || !Class.CastTo(building, parent)) return false;
+        BuildingBase building = BuildingBase.Cast(obj);
+        if (!building)
+        {
+            Object parent = Object.Cast(obj.GetParent());
+            if (!parent) return false;
+
+            building = BuildingBase.Cast(parent);
+            if (!building) return false;
         }
 
         int comp = target.GetComponentIndex();
@@ -84,7 +88,9 @@ class ActionShowDoorIndex : ActionContinuousBase
         GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][SV] finish start");
 
         if (!action_data) return;
-        PlayerBase player = action_data.m_Player; if (!player) return;
+        PlayerBase player = PlayerBase.Cast(action_data.m_Player);
+        if (!player) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: no player"); return; }
+        
         if (!action_data.m_Target) return;
 
         Object obj = action_data.m_Target.GetObject(); if (!obj) return;
@@ -120,10 +126,20 @@ class ActionShowDoorIndex : ActionContinuousBase
         }
 
 
-        BuildingBase building;
-        if (!Class.CastTo(building, obj)) {
-            Object parent = obj.GetParent();
-            if (!parent || !Class.CastTo(building, parent)) return;
+        BuildingBase building = BuildingBase.Cast(obj);
+        if (!building)
+        {
+            Object parent = Object.Cast(obj.GetParent());
+            if (!parent) {
+                GetTWT_CustomKeyLogger().LogDebug("[BUILD] abort: no parent");
+                return;
+            }
+
+            building = BuildingBase.Cast(parent);
+            if (!building) {
+                GetTWT_CustomKeyLogger().LogDebug("[BUILD] abort: parent not BuildingBase");
+                return;
+            }
         }
 
         int comp = action_data.m_Target.GetComponentIndex();

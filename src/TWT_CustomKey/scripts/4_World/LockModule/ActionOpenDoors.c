@@ -23,7 +23,7 @@ modded class ActionOpenDoors : ActionInteractBase
             return true;
 
 
-        ItemBase held = player.GetItemInHands();
+        ItemBase held = ItemBase.Cast(player.GetItemInHands());
         string heldType = "";
         if (held)
             heldType = held.GetType();
@@ -35,8 +35,8 @@ modded class ActionOpenDoors : ActionInteractBase
     {
         if (!action_data) { super.OnStartServer(action_data); return; }
 
-        PlayerBase player = action_data.m_Player;
-        if (!player) { super.OnStartServer(action_data); return; }
+        PlayerBase player = PlayerBase.Cast(action_data.m_Player);
+        if (!player) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: no player"); return; }
 
         BuildingBase building = BuildingBase.Cast(action_data.m_Target.GetObject());
         if (!building) { super.OnStartServer(action_data); return; }
@@ -44,7 +44,7 @@ modded class ActionOpenDoors : ActionInteractBase
         int doorIndex = building.GetDoorIndex(action_data.m_Target.GetComponentIndex());
         if (doorIndex == -1) { super.OnStartServer(action_data); return; }
 
-        ItemBase held = player.GetItemInHands();
+        ItemBase held = ItemBase.Cast(player.GetItemInHands());
         string heldType = "";
         if (held)
             heldType = held.GetType();

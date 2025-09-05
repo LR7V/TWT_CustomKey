@@ -31,10 +31,17 @@ modded class ActionUnlockDoors : ActionContinuousBase
     {
         BuildingBase building;
         Object obj = target.GetObject();
-        if (!Class.CastTo(building, obj)) {
-            Object parent = obj.GetParent();
-            if (!parent || !Class.CastTo(building, parent))
-                return false;
+        if (!obj) return false;
+
+        building = BuildingBase.Cast(obj);
+
+        if (!building)
+        {
+            Object parent = Object.Cast(obj.GetParent());
+            if (!parent) return false;
+
+            building = BuildingBase.Cast(parent);
+            if (!building) return false;
         }
 
         int doorIndex = building.GetDoorIndex(target.GetComponentIndex());
@@ -76,15 +83,15 @@ modded class ActionUnlockDoors : ActionContinuousBase
         Object tgt = action_data.m_Target.GetObject();
         if (!tgt) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: target obj null"); return; }
 
-        BuildingBase building;
-        if (!Class.CastTo(building, tgt)) {
-            Object parent = tgt.GetParent();
-            if (!parent || !Class.CastTo(building, parent)) {
-                GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: no building");
-                return;
-            }
-        }
+        BuildingBase building = BuildingBase.Cast(tgt);
+        if (!building)
+        {
+            Object parent = Object.Cast(tgt.GetParent());
+            if (!parent) { GetTWT_CustomKeyLogger().LogDebug("[LOCK/UNLOCK] abort: no parent"); return; }
 
+            building = BuildingBase.Cast(parent);
+            if (!building) { GetTWT_CustomKeyLogger().LogDebug("[LOCK/UNLOCK] abort: parent not BuildingBase"); return; }
+        }
 
         int comp = action_data.m_Target.GetComponentIndex();
         int doorIndex = building.GetDoorIndex(comp);
@@ -93,7 +100,7 @@ modded class ActionUnlockDoors : ActionContinuousBase
         if (!building.IsDoorLocked(doorIndex)) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: already unlocked"); return; }
 
 
-        ItemBase held = player.GetItemInHands();
+        ItemBase held = ItemBase.Cast(player.GetItemInHands());
         if (!held) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: no item in hands"); return; }
 
         string heldType = held.GetType();
