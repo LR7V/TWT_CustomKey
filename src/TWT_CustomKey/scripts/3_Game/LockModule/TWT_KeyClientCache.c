@@ -42,6 +42,7 @@ class TWT_KeyClientCache
 
         string lhs = typeName; lhs.Trim(); lhs.ToLower();
         string rhs = s_AdminKeyTypeClient; rhs.Trim(); rhs.ToLower();
+
         return (lhs == rhs);
     }
 

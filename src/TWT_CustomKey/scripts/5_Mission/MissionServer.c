@@ -33,7 +33,7 @@ modded class MissionServer extends MissionBase
         super.OnClientReadyEvent(identity, player);
         if (identity)
         {
-            Print("[KEYSYNC] send types to " + identity.GetId());
+            GetTWT_CustomKeyLogger().LogDebug("[KEYSYNC] send types to " + identity.GetId());
             TWT_KeySyncService_Server.SendAllowedTypesToClient(identity);
         }
     }

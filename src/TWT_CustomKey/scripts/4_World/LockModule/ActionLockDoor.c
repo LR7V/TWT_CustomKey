@@ -103,17 +103,41 @@ modded class ActionLockDoors : ActionContinuousBase
         ItemBase held = player.GetItemInHands();
         if (!held) { GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: no item in hands"); return; }
 
-        string heldType = held.GetType();
+            string heldType = held.GetType();
+            heldType.Trim();
+            heldType.ToLower();
 
+        
         bool isAdminKey = TWT_KeyConfig.IsAdminKey(heldType);
-        if (!isAdminKey)
+        if (isAdminKey)
         {
-            if (!TWT_KeyConfig.IsAllowedType(heldType)) { GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: type not allowed"); return; }
-            if (!TWT_KeyConfig.CanUseKey(heldType, steamID)) 
-            { 
+           if (!TWT_KeyConfig.IsAdminSteamId(steamID))
+            {
+                NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 5.0, "Türschloss","Ich glaube der Schlüssel ist nichts für dich!", "");
+
+                ItemBase toDelete = held;
+                if (toDelete && GetGame() && GetGame().IsServer())
+                {
+                    string delType = toDelete.GetType();
+                    GetGame().ObjectDelete(toDelete);
+                    GetTWT_CustomKeyLogger().LogInfo("[LOCK] AdminKey confiscated from non-admin " + steamID + " item=" + delType);
+                }
+
+                return;
+            }
+        }
+        else
+        {
+            if (!TWT_KeyConfig.IsAllowedType(heldType))
+            {
+                GetTWT_CustomKeyLogger().LogDebug("[UNLOCK/LOCK] abort: type not allowed");
+                return;
+            }
+            if (!TWT_KeyConfig.CanUseKey(heldType, steamID))
+            {
                 NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 5.0, "Türschloss", "Finger weg , sonst Finger ab!", "");
-                GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: not whitelisted"); 
-                return; 
+                GetTWT_CustomKeyLogger().LogDebug("[UNLOCK/LOCK] abort: not whitelisted");
+                return;
             }
         }
 
@@ -122,11 +146,10 @@ modded class ActionLockDoors : ActionContinuousBase
         bool nowLocked = building.IsDoorLocked(doorIndex);
         if (!nowLocked) { GetTWT_CustomKeyLogger().LogDebug("[LOCK] abort: lock failed"); return; }
 
-        GetTWT_DoorLockDB().SetLocked(building, doorIndex, true);
+        GetTWT_DoorLockDB().SetLockedWithKey(building, doorIndex, true, heldType);
 
         vector pos = building.GetPosition();
-        string msg = "Abgeschlossen | " + playerName + " (" + steamID + ") | " + building.GetType() + " (" + pos.ToString() + ") | DoorIndex [" + doorIndex.ToString() + "]";
-        if (isAdminKey) msg = msg + " | via AdminKey";
+        string msg = "Abgeschlossen | " + playerName + " (" + steamID + ") | " + building.GetType() + " (" + pos.ToString() + ") | DoorIndex [" + doorIndex.ToString() + "] | Key: " + heldType;
         GetTWT_CustomKeyLogger().LogInfo(msg);
     }
 };

@@ -1,14 +1,27 @@
-class ActionShowDoorIndex : ActionInteractBase
+class ActionShowDoorIndexCB : ActionContinuousBaseCB
+{
+    override void CreateActionComponent()
+    {
+        // sichtbarer Progress: z.B. 2 Sekunden
+        m_ActionData.m_ActionComponent = new CAContinuousTime(2.0);
+    }
+};
+
+class ActionShowDoorIndex : ActionContinuousBase
 {
     void ActionShowDoorIndex()
     {
-        m_HUDCursorIcon = CursorIcons.None;
+        m_CallbackClass     = ActionShowDoorIndexCB;
+        m_CommandUID        = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
+        m_FullBody          = true;  
+        m_LockTargetOnUse   = true; 
+        m_StanceMask        = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+        GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX] ctor");
     }
 
-    override string GetText()
-    {
-        return "Türindex anzeigen";
-    }
+    override bool HasTarget() { return true; }
+
+    override string GetText() { return "Türstatus anzeigen"; }
 
     override void CreateConditionComponents()
     {
@@ -16,29 +29,127 @@ class ActionShowDoorIndex : ActionInteractBase
         m_ConditionTarget = new CCTCursor;
     }
 
+    override typename GetInputType()
+    {
+        return ContinuousInteractActionInput;  // Hold F
+    }
+
     override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
     {
-        if (!player || !target) return false;
+        string side = "CLIENT";
+        if (GetGame() && GetGame().IsServer()) { side = "SERVER"; }
+        GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][AC][" + side + "] begin");
 
-        if (!item) return false;
-        if (!TWT_KeyConfig.IsAdminKey(item.GetType())) return false;
+        if (!player) return false;
+        if (!target) return false;
+
+        // IMMER aus der Hand lesen (item kann null sein)
+        ItemBase inHands = ItemBase.Cast(player.GetItemInHands());
+        if (!inHands) {
+            GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][AC][" + side + "] abort: no item in hands");
+            return false;
+        }
+
+        string heldType = inHands.GetType();
+        GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][AC][" + side + "] heldType=" + heldType);
+
+        // Client: AdminKey-Filter
+        if (GetGame() && !GetGame().IsServer())
+        {
+            if (!TWT_KeyClientCache.IsAdminKeyClient(heldType)) {
+                GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][AC][CLIENT] hidden: not AdminKey");
+                return false;
+            }
+        }
+
+        Object obj = target.GetObject();
+        if (!obj) return false;
 
         BuildingBase building;
-        if (!Class.CastTo(building, target.GetObject())) return false;
+        if (!Class.CastTo(building, obj)) {
+            Object parent = obj.GetParent();
+            if (!parent || !Class.CastTo(building, parent)) return false;
+        }
 
-        int doorIndex = building.GetDoorIndex(target.GetComponentIndex());
-        return (doorIndex != -1);
+        int comp = target.GetComponentIndex();
+        int doorIndex = building.GetDoorIndex(comp);
+        GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][AC][" + side + "] comp=" + comp.ToString() + " doorIndex=" + doorIndex.ToString());
+
+        if (doorIndex < 0) return false;
+        return true;
     }
 
-    override void OnStartServer(ActionData action_data)
+    override void OnFinishProgressServer(ActionData action_data)
     {
-        PlayerBase player = action_data.m_Player;
-        BuildingBase building = BuildingBase.Cast(action_data.m_Target.GetObject());
-        if (!player || !building) return;
+        GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][SV] finish start");
 
-        int doorIndex = building.GetDoorIndex(action_data.m_Target.GetComponentIndex());
-        if (doorIndex == -1) return;
+        if (!action_data) return;
+        PlayerBase player = action_data.m_Player; if (!player) return;
+        if (!action_data.m_Target) return;
 
-        player.MessageStatus("[AdminKey] Türindex: " + doorIndex.ToString());
+        Object obj = action_data.m_Target.GetObject(); if (!obj) return;
+
+        string sid = "";
+        if (player.GetIdentity()) { sid = player.GetIdentity().GetPlainId(); }
+
+        string sid = "";
+        if (player.GetIdentity()) { sid = player.GetIdentity().GetPlainId(); }
+        if (!TWT_KeyConfig.IsAdminSteamId(sid))
+        {
+            string msg = "Ich glaube der Schlüssel ist nichts für dich!";
+            ItemBase held = ItemBase.Cast(player.GetItemInHands());
+
+            if (held)
+            {
+                string heldType = held.GetType();
+
+                string adminType = TWT_KeyConfig.GetAdminKeyType();
+                string heldNorm  = heldType;  heldNorm.Trim();  heldNorm.ToLower();
+                string adminNorm = adminType; adminNorm.Trim(); adminNorm.ToLower();
+
+                if (adminNorm != string.Empty && heldNorm == adminNorm)
+                {
+                    if (GetGame() && GetGame().IsServer())
+                    {
+                        GetTWT_CustomKeyLogger().LogInfo("[SHOWIDX] Confiscated AdminKey from non-admin " + sid + " item=" + heldType);
+                        GetGame().ObjectDelete(held);
+                    }
+                    msg = "Ich glaube der Schlüssel ist nichts für dich!";
+                }
+            }
+
+            NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 5.0, "Türstatus", msg, "");
+            GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][SV] abort: not admin");
+            return;
+        }
+
+
+        BuildingBase building;
+        if (!Class.CastTo(building, obj)) {
+            Object parent = obj.GetParent();
+            if (!parent || !Class.CastTo(building, parent)) return;
+        }
+
+        int comp = action_data.m_Target.GetComponentIndex();
+        int doorIndex = building.GetDoorIndex(comp);
+        GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][SV] comp=" + comp.ToString() + " doorIndex=" + doorIndex.ToString());
+        if (doorIndex < 0) return;
+
+        bool isLocked = building.IsDoorLocked(doorIndex);
+
+        string status = "";
+        if (isLocked) { status = "ABGESCHLOSSEN"; } else { status = "OFFEN"; }
+
+        string keyType = "";
+        if (isLocked) {
+            keyType = GetTWT_DoorLockDB().GetLastKeyType(building, doorIndex);
+            if (!keyType || keyType == string.Empty) { keyType = "unbekannt"; }
+        }
+
+        string msg = "[Index " + doorIndex.ToString() + "] Status: " + status;
+        if (isLocked) { msg = msg + " | Key: " + keyType; }
+
+        NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 6.0, "Türstatus", msg, "");
+        GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][SV] finish done");
     }
-};
+}

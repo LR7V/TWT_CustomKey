@@ -60,7 +60,6 @@ modded class ActionUnlockDoors : ActionContinuousBase
     {
         GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] start");
 
-
         if (!action_data) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: no action_data"); return; }
 
         PlayerBase player = PlayerBase.Cast(action_data.m_Player);
@@ -76,7 +75,6 @@ modded class ActionUnlockDoors : ActionContinuousBase
         if (!action_data.m_Target) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: no target"); return; }
         Object tgt = action_data.m_Target.GetObject();
         if (!tgt) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: target obj null"); return; }
-
 
         BuildingBase building;
         if (!Class.CastTo(building, tgt)) {
@@ -99,15 +97,57 @@ modded class ActionUnlockDoors : ActionContinuousBase
         if (!held) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: no item in hands"); return; }
 
         string heldType = held.GetType();
-
         bool isAdminKey = TWT_KeyConfig.IsAdminKey(heldType);
-        if (!isAdminKey) {
-            if (!TWT_KeyConfig.IsAllowedType(heldType)) { GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: type not allowed"); return; }
-            if (!TWT_KeyConfig.CanUseKey(heldType, steamID)) 
-            { 
-                NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 5.0, "Türschloss", "Finger weg , sonst Finger ab!", "");
-                GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: not whitelisted"); 
+
+        GetTWT_CustomKeyLogger().LogDebug(heldType);
+
+
+        string storedType = GetTWT_DoorLockDB().GetLastKeyType(building, doorIndex);
+        string storedNorm = "";
+        if (storedType && storedType != string.Empty) { storedNorm = storedType; storedNorm.Trim(); storedNorm.ToLower(); }
+
+        if (isAdminKey)
+        {
+
+           if (!TWT_KeyConfig.IsAdminSteamId(steamID))
+            {
+
+                NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 5.0, "Türschloss","Ich glaube der Schlüssel ist nichts für dich!", "");
+
+                ItemBase toDelete = held;
+                if (toDelete && GetGame() && GetGame().IsServer())
+                {
+                    string delType = toDelete.GetType();
+                    GetGame().ObjectDelete(toDelete);
+                    GetTWT_CustomKeyLogger().LogInfo("[UNLOCK] AdminKey confiscated from non-admin " + steamID + " item=" + delType);
+                }
+
                 return; 
+            }
+        }
+        else
+        {
+
+            if (!TWT_KeyConfig.IsAllowedType(heldType)) {
+                GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: type not allowed");
+                return;
+            }
+            if (!TWT_KeyConfig.CanUseKey(heldType, steamID))
+            {
+                NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 5.0, "Türschloss","Finger weg, sonst Finger ab!", "");
+                GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: not whitelisted");
+                return;
+            }
+
+            if (storedNorm != "")
+            {
+                string heldNorm = heldType; heldNorm.Trim(); heldNorm.ToLower();
+                if (heldNorm != storedNorm)
+                {
+                    NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 5.0, "Türschloss", "Der Schlüssel passt hier nicht.", "");
+                    GetTWT_CustomKeyLogger().LogDebug("[UNLOCK] abort: wrong key type, stored=" + storedType + " used=" + heldType);
+                    return;
+                }
             }
         }
 
@@ -117,11 +157,8 @@ modded class ActionUnlockDoors : ActionContinuousBase
 
         GetTWT_DoorLockDB().SetLocked(building, doorIndex, false);
 
-
         vector pos = building.GetPosition();
-        string msg = "Aufgeschlossen | " + playerName + " (" + steamID + ") | " + building.GetType() + " (" + pos.ToString() + ") | DoorIndex [" + doorIndex.ToString() + "]";
-        if (isAdminKey) msg = msg + " | via AdminKey";
+        string msg = "Aufgeschlossen | " + playerName + " (" + steamID + ") | " + building.GetType() + " (" + pos.ToString() + ") | DoorIndex [" + doorIndex.ToString() + "] | Key: " + heldType;
         GetTWT_CustomKeyLogger().LogInfo(msg);
     }
-
 };
