@@ -91,12 +91,9 @@ class ActionShowDoorIndex : ActionContinuousBase
 
         string sid = "";
         if (player.GetIdentity()) { sid = player.GetIdentity().GetPlainId(); }
-
-        string sid = "";
-        if (player.GetIdentity()) { sid = player.GetIdentity().GetPlainId(); }
         if (!TWT_KeyConfig.IsAdminSteamId(sid))
         {
-            string msg = "Ich glaube der Schlüssel ist nichts für dich!";
+            string adminmsg = "Ich glaube der Schlüssel ist nichts für dich!";
             ItemBase held = ItemBase.Cast(player.GetItemInHands());
 
             if (held)
@@ -114,11 +111,10 @@ class ActionShowDoorIndex : ActionContinuousBase
                         GetTWT_CustomKeyLogger().LogInfo("[SHOWIDX] Confiscated AdminKey from non-admin " + sid + " item=" + heldType);
                         GetGame().ObjectDelete(held);
                     }
-                    msg = "Ich glaube der Schlüssel ist nichts für dich!";
                 }
             }
 
-            NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 5.0, "Türstatus", msg, "");
+            NotificationSystem.SendNotificationToPlayerIdentityExtended(player.GetIdentity(), 5.0, "Türstatus", adminmsg, "");
             GetTWT_CustomKeyLogger().LogDebug("[SHOWIDX][SV] abort: not admin");
             return;
         }

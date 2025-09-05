@@ -254,7 +254,7 @@ class TWT_KeyConfig
         tn.Trim();
         tn.ToLower();
         if (tn == string.Empty) return false;
-)
+
         if (s_Data && s_Data.adminKeyType && s_Data.adminKeyType != string.Empty) {
             string an = s_Data.adminKeyType;
             an.Trim();
